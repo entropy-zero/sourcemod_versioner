@@ -28,6 +28,7 @@ class GameInfo:
         newdata = newdata.replace("\\+\\", "+")
         newdata = newdata.replace("\\|\\", "|")
         newdata = newdata.replace("\\+", "+")
+        newdata = newdata.replace("\\|", "|")
         f = open(self.filepath,'w')
         f.write(newdata)
         f.close()
