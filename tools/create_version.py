@@ -2,6 +2,7 @@ import os
 from os.path import abspath
 import sys
 import argparse
+from sourcemod_versioner.versioning.game_version import GameVersion
 from sourcemod_versioner.versioning.repo import Repository
 from sourcemod_versioner.data.gameinfo_file import GameInfo
 from sourcemod_versioner.data.version_history_file import VersionHistoryFile
@@ -15,38 +16,15 @@ def determine_version_change(release_diff, maps_diff):
 
     return "patch"
 
-def update_version_tag(previous_version, version_change):
-    version_parts = previous_version.split('.')
-    major = int(version_parts[0])
-    minor = int(version_parts[1])
-    patch = int(version_parts[2])    
-    
-    if(version_change == "major"):
-        major = major + 1
-        minor = 0
-        patch = 0
-        return '.'.join([str(major), str(minor), str(patch)])
-
-    if(version_change == "minor"):
-        minor = minor + 1
-        patch = 0
-        return '.'.join([str(major), str(minor), str(patch)])
-
-    patch = patch + 1
-    return '.'.join([str(major), str(minor), str(patch)])
-
-def version_tag_to_git_tag(version_tag, game_prefix, release_stage):
-    return game_prefix + "_" + release_stage + "-" + version_tag 
-
-def commit_tag_and_push(repository, version_tag, game_prefix, release_stage, summary="") -> int:
-    git_tag = version_tag_to_git_tag(version_tag, game_prefix, release_stage)    
-    repository.create_commit("{}: {}".format(version_tag, summary) if summary else version_tag)
-    tag_object = repository.create_tag(git_tag)
+def commit_tag_and_push(repository, version, summary="") -> int:
+    repository.create_commit("{}: {}".format(version.get_version_tag(), summary) if summary else version.get_version_tag())
+    tag_object = repository.create_tag(str(version))
     repository.push([tag_object])
 
 def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2", release_stage="release", summary="") -> int:
     # Get the version number
     previous_version = gameInfo.GetKeyValue('ez2_version')
+    game_version = GameVersion(previous_version, game_prefix, release_stage)
 
     # Check if there are outstanding changes and exit if there are
     if(repository.has_unstaged_changes()):
@@ -54,25 +32,25 @@ def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2",
         return 1
 
     # Gather changes
-    release_diff = repository.get_diff_with_tag(version_tag_to_git_tag(previous_version, game_prefix, release_stage))
+    release_diff = repository.get_diff_with_tag(str(game_version))
     print("Release diff:", release_diff)
     maps_diff = [os.path.splitext(os.path.basename(file))[0] for file in release_diff if '.vmf' in file or '.vmm' in file]
     print("Maps diff:", maps_diff)
 
     # Determine automatic semantic version
     version_change = determine_version_change(release_diff, maps_diff)
-    version_tag = update_version_tag(previous_version, version_change)
-    minor_version_string = '.'.join(version_tag.split('.')[0:2])
+    game_version.update_version(version_change)
     
     # Update version history file
     if(version_change == "minor" or version_change == "major"):
-        version_history_object = { "branch" : "{}-{}".format(release_stage, minor_version_string), "universal" : 1 if version_change == "major" else "0", "maps" : { mapname : "1" for mapname in maps_diff}}
-        ez2_version_history.ReplaceKeyValue(minor_version_string, version_history_object)
+        branch_name = "{}-{}".format(release_stage, game_version.get_minor_version_tag()) if game_prefix == "ez2" else "developer"
+        version_history_object = { "branch" : branch_name, "universal" : 1 if version_change == "major" else "0", "maps" : { mapname : "1" for mapname in maps_diff}}
+        ez2_version_history.ReplaceKeyValue(game_version.get_minor_version_tag(), version_history_object)
         ez2_version_history.SaveToFile()
 
     # Update gameinfo.txt with version
     # ez2_version is hard coded - it does not update to the game prefix
-    gameInfo.ReplaceKeyValue('ez2_version', version_tag)
+    gameInfo.ReplaceKeyValue('ez2_version', game_version.get_version_tag())
     gameInfo.SaveToFile()
 
     repository.add_files([gameInfo.GetFilepath(), ez2_version_history.GetFilepath()])
@@ -94,7 +72,7 @@ def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2",
             print("Could not remove file '{}' because the file could not be found.".format(minor_version_filepath))
 
 
-    return commit_tag_and_push(repository, version_tag, game_prefix, release_stage, summary)
+    return commit_tag_and_push(repository, game_version, summary)
 
 def main():
     print("Running script: " + sys.argv[0])
