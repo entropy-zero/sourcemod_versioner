@@ -21,7 +21,7 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
     vmf_paths_diff = [file for file in release_diff if '.vmf' in file or '.vmm' in file]
     print("Map paths diff:", vmf_paths_diff)
 
-    vmf_paths_diff_no_instances = [file for file in vmf_paths_diff if 'instance_' not in file]
+    vmf_paths_diff_no_instances = [file for file in vmf_paths_diff if 'instance_' not in file and 'prefabs' not in file]
 
     vbsp_command = os.path.join(binpath, "vbsp.exe")
     vvis_command = os.path.join(binpath, "vvis.exe")
