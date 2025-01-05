@@ -30,13 +30,30 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
     gamepath = os.path.dirname(gameInfo.GetFilepath())
     mapspath = abspath(os.path.join(gamepath, "maps"))
 
+    errors = []
+
     for vmf_path in vmf_paths_diff_no_instances:
-        subprocess.check_call([vbsp_command, "-game", gamepath, vmf_path])
-        subprocess.check_call([vvis_command, "-game", gamepath, vmf_path])
-        subprocess.check_call([vrad_command, "-both", "-final", "-game", os.path.dirname(gameInfo.GetFilepath()), vmf_path])
-        bsp_source_path = os.path.splitext(vmf_path)[0] + ".bsp"
-        bsp_dest_path = abspath(os.path.join(mapspath, os.path.splitext(os.path.basename(vmf_path))[0])) + ".bsp"
-        subprocess.check_call(["cp", bsp_source_path, bsp_dest_path])
+        try:
+            print("Running compile process for VMF path: " + vmf_path)
+            subprocess.check_call([vbsp_command, "-game", gamepath, vmf_path])
+            subprocess.check_call([vvis_command, "-game", gamepath, vmf_path])
+            subprocess.check_call([vrad_command, "-both", "-final", "-game", os.path.dirname(gameInfo.GetFilepath()), vmf_path])
+            bsp_source_path = os.path.splitext(vmf_path)[0] + ".bsp"
+            bsp_dest_path = abspath(os.path.join(mapspath, os.path.splitext(os.path.basename(vmf_path))[0])) + ".bsp"
+            subprocess.check_call(["cp", bsp_source_path, bsp_dest_path])
+        except subprocess.CalledProcessError as e:
+            print("Process returned nonzero exit code")
+            print("Command: "  + str(e.cmd))
+            print("Return code: " + str(e.returncode))
+            print("Output: " + str(e.output))
+            errors.append(e)
+    
+    if(not errors):
+        return 0
+    else:
+        print("Compile process returned errors! Please see above.")
+        return 1
+
 
 def main():
     print("Running script: " + sys.argv[0])
