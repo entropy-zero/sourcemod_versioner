@@ -1,6 +1,7 @@
 import argparse
 import os
 from os.path import abspath
+import time
 import subprocess
 import sys
 from sourcemod_versioner.versioning.game_version import GameVersion
@@ -8,7 +9,7 @@ from sourcemod_versioner.versioning.repo import Repository
 from sourcemod_versioner.data.gameinfo_file import GameInfo
 from sourcemod_versioner.data.autocubemap_file import AutoCubemapFile
 
-def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage="release", summary="", autocubemap_file=None) -> int:
+def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage="release", summary="", autocubemap_file=None, mapschangelist_path="", buildgraphs=False) -> int:
     # Get the version number
     previous_version = gameInfo.GetKeyValue('ez2_version')
     game_version = GameVersion(previous_version, game_prefix, release_stage)
@@ -24,6 +25,7 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
     vmf_names_diff_no_instances = [file for file in vmf_names_diff if 'instance_' not in file and 'prefabs' not in file]
     vmf_paths_diff_no_instances = [file for file in vmf_paths_diff if 'instance_' not in file and 'prefabs' not in file]
 
+    game_command = os.path.join(binpath, "../hl2.exe")
     vbsp_command = os.path.join(binpath, "vbsp.exe")
     vvis_command = os.path.join(binpath, "vvis.exe")
     vrad_command = os.path.join(binpath, "vrad.exe")
@@ -52,7 +54,20 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
     # Update version history file
     for vmf_name in vmf_names_diff_no_instances:
         autocubemap_file.ReplaceKeyValue(vmf_name, "1")
+        print("Launching the game to build graphs for map: " + vmf_name)
+        if buildgraphs:
+            proc = subprocess.Popen([game_command, "-game", gamepath, "-novid", "-dev", "+map", vmf_name])
+            # Kill hl2.exe after 15 seconds
+            time.sleep(15)
+            proc.kill()
+        
     autocubemap_file.SaveToFile()
+
+    # Write file with all recently edited maps
+    if mapschangelist_path:
+        f = open(mapschangelist_path,'w')
+        f.write('\n'.join(vmf_names_diff_no_instances))
+        f.close() 
 
     if(not errors):
         return 0
@@ -70,6 +85,7 @@ def main():
     parser.add_argument("--summary", nargs='?', default="")
     parser.add_argument("--prefix", nargs='?', default="ez2")
     parser.add_argument("--phase", nargs='?', default="release")
+    parser.add_argument("--buildgraphs", nargs='?', default="false")
     args=parser.parse_args()
 
     if not args.game:
@@ -89,6 +105,11 @@ def main():
     binpath = os.path.join(basegame_path, "bin")
     print("Bin path: {}".format(binpath))
 
+    # Check if we should build graphs
+    buildgraphs = False
+    if args.buildgraphs:
+        buildgraphs =args.buildgraphs.lower() in ("yes", "true", "t", "1")
+
     # Setup repo
     repository = Repository()
     repository.initialize(repo_path)
@@ -103,7 +124,9 @@ def main():
     autocube_path = os.path.join(repo_path, "tools/autocubemap_ez2.txt")
     autocubemap_ez2 = AutoCubemapFile(autocube_path)
 
-    return compile_maps(repository, gameInfo, binpath, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary, autocubemap_file=autocubemap_ez2)
+    mapschangelist_path = autocube_path = os.path.join(repo_path, "maps_changelist.txt")
+
+    return compile_maps(repository, gameInfo, binpath, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary, autocubemap_file=autocubemap_ez2, mapschangelist_path=mapschangelist_path, buildgraphs=buildgraphs)
 
 if __name__ == '__main__':
     sys.exit(main())
