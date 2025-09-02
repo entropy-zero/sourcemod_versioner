@@ -80,6 +80,9 @@ class Repository:
             ref=self._repo.head.ref
         )
         return tag
+    
+    def log(self, tag="") -> int:
+        return self._repo.git.log(tag + "..HEAD", "--oneline", "--format=%s")
 
 
 if __name__ == '__main__':

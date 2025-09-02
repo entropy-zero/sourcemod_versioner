@@ -124,7 +124,7 @@ def main():
     autocube_path = os.path.join(repo_path, "tools/autocubemap_ez2.txt")
     autocubemap_ez2 = AutoCubemapFile(autocube_path)
 
-    mapschangelist_path = autocube_path = os.path.join(repo_path, "maps_changelist.txt")
+    mapschangelist_path = os.path.join(repo_path, "maps_changelist.txt")
 
     return compile_maps(repository, gameInfo, binpath, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary, autocubemap_file=autocubemap_ez2, mapschangelist_path=mapschangelist_path, buildgraphs=buildgraphs)
 
