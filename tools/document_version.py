@@ -59,12 +59,12 @@ def document_version(repository, gameInfo, ez2_version_history, game_prefix="ez2
         chapters_dict = {}
 
         for file in vmf_names_diff_no_instances:
-            if("ez2_c" not in file):
+            if(game_prefix + "_c" not in file):
                 if("Other" not in chapters_dict):
                     chapters_dict["Other"] = []
                 chapters_dict["Other"].append(file)
             else:
-                chapter_title = "Chapter " + file[5]
+                chapter_title = "Chapter " + file.replace(game_prefix + "_c", "")[0]
                 if(chapter_title not in chapters_dict):
                     chapters_dict[chapter_title] = []
                 chapters_dict[chapter_title].append(file)
