@@ -21,7 +21,7 @@ def commit_tag_and_push(repository, version, summary="") -> int:
     tag_object = repository.create_tag(str(version))
     repository.push([tag_object])
 
-def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2", release_stage="release", summary="") -> int:
+def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2", release_stage="release", summary="", additional_gameInfo=None) -> int:
     # Get the version number
     previous_version = gameInfo.GetKeyValue('ez2_version')
     game_version = GameVersion(previous_version, game_prefix, release_stage)
@@ -55,6 +55,12 @@ def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2",
 
     repository.add_files([gameInfo.GetFilepath(), ez2_version_history.GetFilepath()])
 
+    if additional_gameInfo:
+        additional_gameInfo.ReplaceKeyValue('ez2_version', game_version.get_version_tag())
+        additional_gameInfo.SaveToFile()
+        repository.add_files([additional_gameInfo.GetFilepath()])
+
+
     if(version_change == "major"):
         major_version_filepath=os.path.join(repository.get_filepath(), 'major_version')
         try:
@@ -83,6 +89,7 @@ def main():
     parser.add_argument("--prefix", nargs='?', default="ez2")
     parser.add_argument("--phase", nargs='?', default="release")
     parser.add_argument("--dryrun", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--additional_gameinfo", nargs='?', default="")
     args=parser.parse_args()
 
     if not args.game:
@@ -105,12 +112,19 @@ def main():
     gameInfo = GameInfo(gameinfo_path)
     gameInfo.LoadFromFile()
 
+    # Support for saving the version to a second gameinfo file
+    # TODO Add support for N number of files!
+    additional_gameInfo = None
+    if args.additional_gameinfo:
+        additional_gameInfo = GameInfo(gameinfo_path)
+        additional_gameInfo.LoadFromFile()
+
     # Load version history file
     # TODO - Add handling for missing version history file
     ez2_version_history = VersionHistoryFile(versionhistory_path)
     ez2_version_history.LoadFromFile()
 
-    return create_version(repository, gameInfo, ez2_version_history, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary)
+    return create_version(repository, gameInfo, ez2_version_history, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary, additional_gameInfo=additional_gameInfo)
 
 if __name__ == '__main__':
     sys.exit(main())
