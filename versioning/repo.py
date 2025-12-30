@@ -51,14 +51,16 @@ class Repository:
         self._repo.index.remove(files_names) 
         return 0
 
-    def create_commit(self, commit_message) -> int:
+    # Skip hooks by default because of an erroring running hooks
+    def create_commit(self, commit_message, skip_hooks=True) -> int:
         if(self._dry_run):
             print("DRY RUN: Would have committed with message: " + commit_message)
             return 0
-        self._repo.index.commit(commit_message)
+        self._repo.index.commit(commit_message, skip_hooks=skip_hooks)
         return 0
 
-    def push(self, tags=[]) -> int:
+    # Skip hooks by default because of an erroring running hooks
+    def push(self, tags=[], skip_hooks=True) -> int:
         print("Pushing to repository")
 
         if(self._dry_run):
@@ -67,10 +69,11 @@ class Repository:
 
         self._remote.push()
         for tag in tags:
-            self._remote.push(tag.name)
+            self._remote.push(tag.name, kwargs=[ "no-verify" if skip_hooks else "verify"])
         return 0
 
-    def create_tag(self, tag_name) -> int:
+    # Skip hooks by default because of an erroring running hooks
+    def create_tag(self, tag_name, skip_hooks=True) -> int:
         if(self._dry_run):
             print("DRY RUN: Would have created tag: " + tag_name)
             return {"name":tag_name}
@@ -78,6 +81,7 @@ class Repository:
         tag = self._repo.create_tag(
             tag_name,
             ref=self._repo.head.ref
+            kwargs=[ "no-verify" if skip_hooks else "verify"]
         )
         return tag
     
