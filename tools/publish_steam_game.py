@@ -94,6 +94,7 @@ def main():
         ##################################################
         print("Build changes detected!")
         print("Updating VDF files...")
+        os.chdir(launchpad_directory)
         config_directory = os.path.join(launchpad_directory, "Config")
         public_config_file = os.path.join(config_directory, "app_build_" + args.appid + ".vdf")
         private_config_file = os.path.join(config_directory, "app_build_" + args.appid + "_DLC.vdf")
