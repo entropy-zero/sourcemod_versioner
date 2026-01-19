@@ -53,7 +53,13 @@ def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2",
     gameInfo.ReplaceKeyValue('ez2_version', game_version.get_version_tag())
     gameInfo.SaveToFile()
 
-    repository.add_files([gameInfo.GetFilepath(), ez2_version_history.GetFilepath()])
+    # Latest file version stores the latest tag
+    latest_version_filepath = abspath(os.path.join(repository.get_filepath(), "latest_version.txt"))
+    latest_version_file = open(latest_version_filepath,'w')
+    latest_version_file.write(str(game_version))
+    latest_version_file.close()
+
+    repository.add_files([gameInfo.GetFilepath(), ez2_version_history.GetFilepath(), latest_version_filepath])
 
     if additional_gameInfo:
         additional_gameInfo.ReplaceKeyValue('ez2_version', game_version.get_version_tag())
