@@ -128,6 +128,12 @@ def main():
                 dst=to_filepath,
                 dirs_exist_ok=True)
             
+        # Latest file version stores the latest tag
+        latest_version_filepath = abspath(os.path.join(launchpad_directory, "latest_version.txt"))
+        latest_version_file = open(latest_version_filepath,'w')
+        latest_version_file.write(','.join(latest_private_versions.values()))
+        latest_version_file.close()
+            
         ##################################################
         # Publish to Steam
         ##################################################
