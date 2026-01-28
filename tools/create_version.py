@@ -7,7 +7,10 @@ from sourcemod_versioner.versioning.repo import Repository
 from sourcemod_versioner.data.gameinfo_file import GameInfo
 from sourcemod_versioner.data.version_history_file import VersionHistoryFile
 
-def determine_version_change(release_diff, maps_diff):    
+def determine_version_change(release_diff, maps_diff):
+    if("freeze_version" in release_diff):
+        return "freeze"
+
     if("major_version" in release_diff):
         return "major"
 
@@ -39,6 +42,11 @@ def create_version(repository, gameInfo, ez2_version_history, game_prefix="ez2",
 
     # Determine automatic semantic version
     version_change = determine_version_change(release_diff, maps_diff)
+
+    if(version_change == "freeze"):
+        print("freeze_version file detected!")
+        return 1
+
     game_version.update_version(version_change)
     
     # Update version history file
