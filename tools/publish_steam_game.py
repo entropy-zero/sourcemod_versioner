@@ -123,6 +123,10 @@ def main():
         ##################################################
         for from_filepath, to_filepath in builds_to_copy.items():
             print("Copying files from", from_filepath, "to", to_filepath)
+            if os.path.isdir(os.path.join(from_filepath, ".git")):
+                print(".git folder exists at source filepath!")
+                print("Exiting.")
+                exit(1)
             shutil.copytree(
                 src=from_filepath,
                 dst=to_filepath,
