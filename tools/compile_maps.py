@@ -9,7 +9,7 @@ from sourcemod_versioner.versioning.repo import Repository
 from sourcemod_versioner.data.gameinfo_file import GameInfo
 from sourcemod_versioner.data.autocubemap_file import AutoCubemapFile
 
-def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage="release", summary="", autocubemap_file=None, mapschangelist_path="", buildgraphs=False) -> int:
+def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage="release", summary="", autocubemap_file=None, mapschangelist_path="", buildgraphs=False, worldtextureshadows=False) -> int:
     # Get the version number
     previous_version = gameInfo.GetKeyValue('ez2_version')
     game_version = GameVersion(previous_version, game_prefix, release_stage)
@@ -40,7 +40,11 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
             print("Running compile process for VMF path: " + vmf_path)
             subprocess.check_call([vbsp_command, "-game", gamepath, vmf_path])
             subprocess.check_call([vvis_command, "-game", gamepath, vmf_path])
-            subprocess.check_call([vrad_command, "-both", "-final", "-game", os.path.dirname(gameInfo.GetFilepath()), vmf_path])
+            vrad_args = [vrad_command]
+            if worldtextureshadows:
+                vrad_args.append("-worldtextureshadows")
+            vrad_args.extend(["-both", "-final", "-game", os.path.dirname(gameInfo.GetFilepath()), vmf_path])
+            subprocess.check_call(vrad_args)
             bsp_source_path = os.path.splitext(vmf_path)[0] + ".bsp"
             bsp_dest_path = abspath(os.path.join(mapspath, os.path.splitext(os.path.basename(vmf_path))[0])) + ".bsp"
             subprocess.check_call(["cp", bsp_source_path, bsp_dest_path])
@@ -56,7 +60,7 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
         autocubemap_file.ReplaceKeyValue(vmf_name, "1")
         print("Launching the game to build graphs for map: " + vmf_name)
         if buildgraphs:
-            proc = subprocess.Popen([game_command, "-game", gamepath, "-novid", "-dev", "+map", vmf_name])
+            proc = subprocess.Popen([game_command, "-game", gamepath, "-novid", "-dev", "+map", vmf_name, "+restart"])
             # Kill hl2.exe after 15 seconds
             time.sleep(15)
             proc.kill()
@@ -86,6 +90,7 @@ def main():
     parser.add_argument("--prefix", nargs='?', default="ez2")
     parser.add_argument("--phase", nargs='?', default="release")
     parser.add_argument("--buildgraphs", nargs='?', default="false")
+    parser.add_argument("--worldtextureshadows", nargs='?', default="false")
     args=parser.parse_args()
 
     if not args.game:
@@ -108,7 +113,12 @@ def main():
     # Check if we should build graphs
     buildgraphs = False
     if args.buildgraphs:
-        buildgraphs =args.buildgraphs.lower() in ("yes", "true", "t", "1")
+        buildgraphs = args.buildgraphs.lower() in ("yes", "true", "t", "1")
+
+    # Check if we should use world texture shadows
+    worldtextureshadows = False
+    if args.worldtextureshadows:
+        worldtextureshadows =args.worldtextureshadows.lower() in ("yes", "true", "t", "1")
 
     # Setup repo
     repository = Repository()
@@ -126,7 +136,7 @@ def main():
 
     mapschangelist_path = os.path.join(repo_path, "maps_changelist.txt")
 
-    return compile_maps(repository, gameInfo, binpath, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary, autocubemap_file=autocubemap_ez2, mapschangelist_path=mapschangelist_path, buildgraphs=buildgraphs)
+    return compile_maps(repository, gameInfo, binpath, game_prefix=args.prefix, release_stage=args.phase, summary=args.summary, autocubemap_file=autocubemap_ez2, mapschangelist_path=mapschangelist_path, buildgraphs=buildgraphs, worldtextureshadows=worldtextureshadows)
 
 if __name__ == '__main__':
     sys.exit(main())
