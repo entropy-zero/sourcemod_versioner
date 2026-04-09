@@ -14,7 +14,13 @@ def determine_version_change(release_diff, maps_diff):
     if("major_version" in release_diff):
         return "major"
 
-    if("minor_version" in release_diff or len(maps_diff) > 0):
+    if("minor_version" in release_diff):
+        return "minor"
+    
+    if("patch_version" in release_diff):
+        return "patch"
+
+    if(len(maps_diff) > 0):
         return "minor"
 
     return "patch"
