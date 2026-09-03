@@ -145,6 +145,8 @@ def main():
                     capture_output=True))
         print(subprocess.run(["cmd.exe", "/c",os.path.join(launchpad_directory, "run_build_EZ2_DLC.bat")], 
                     capture_output=True))
+        print(subprocess.run(["cmd.exe", "/c",os.path.join(launchpad_directory, "run_build_EZ1.bat")], 
+                    capture_output=True))
 
 if __name__ == '__main__':
     sys.exit(main())
