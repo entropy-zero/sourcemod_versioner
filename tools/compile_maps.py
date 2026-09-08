@@ -58,12 +58,18 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
     # Update version history file
     for vmf_name in vmf_names_diff_no_instances:
         autocubemap_file.ReplaceKeyValue(vmf_name, "1")
-        print("Launching the game to build graphs for map: " + vmf_name)
         if buildgraphs:
+            print("Launching the game to build graphs for map: " + vmf_name)
             proc = subprocess.Popen([game_command, "-game", gamepath, "-novid", "-dev", "+map", vmf_name, "+restart"])
             # Kill hl2.exe after 15 seconds
             time.sleep(15)
             proc.kill()
+
+    # Add a map to end of the autocubemap file list to end the autocubemap run
+    # TODO - Check if this file exists first
+    if(len(vmf_names_diff_no_instances) > 0):
+        autocubemap_file.ReplaceKeyValue("z_autocubemap_terminus", "1")
+
         
     autocubemap_file.SaveToFile()
 
