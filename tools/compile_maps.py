@@ -10,6 +10,11 @@ from sourcemod_versioner.data.gameinfo_file import GameInfo
 from sourcemod_versioner.data.autocubemap_file import AutoCubemapFile
 
 def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage="release", summary="", autocubemap_file=None, mapschangelist_path="", buildgraphs=False, worldtextureshadows=False, hdr_arg="-both") -> int:
+    print("#############################")
+    print("Starting map compilation now!")
+    print("#############################")
+    print("\n(Some of the output during this step may print out of order)\n")
+
     # Get the version number
     previous_version = gameInfo.GetKeyValue('ez2_version')
     game_version = GameVersion(previous_version, game_prefix, release_stage)
@@ -37,7 +42,9 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
 
     for vmf_path in vmf_paths_diff_no_instances:
         try:
+            print("#########################################################")
             print("Running compile process for VMF path: " + vmf_path)
+            print("#########################################################")
             subprocess.check_call([vbsp_command, "-game", gamepath, vmf_path])
             subprocess.check_call([vvis_command, "-game", gamepath, vmf_path])
             vrad_args = [vrad_command]
@@ -80,9 +87,14 @@ def compile_maps(repository, gameInfo, binpath, game_prefix="ez2", release_stage
         f.close() 
 
     if(not errors):
+        print("#######################################")
+        print("Compile steps completed without errors!")
+        print("#######################################")
         return 0
     else:
-        print("Compile process returned errors! Please see above.")
+        print("################################################")
+        print("Compile steps returned errors! Please see above.")
+        print("################################################")
         return 1
 
 
